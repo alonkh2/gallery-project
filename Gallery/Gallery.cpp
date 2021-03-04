@@ -30,6 +30,8 @@ int getCommandNumberFromUser()
 	return std::atoi(input.c_str());
 }
 
+void print_opening_screen();
+
 int main(void)
 {
 	// initialization data access
@@ -38,9 +40,7 @@ int main(void)
 	// initialize album manager
 	AlbumManager albumManager(dataAccess);
 
-	auto time_now = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
-	
-	std::cout << "Alon Kedar-Haspel" << std::endl << ctime(&time_now) << std::endl;
+	print_opening_screen();
 	
 	std::string albumName;
 	std::cout << "Welcome to Gallery!" << std::endl;
@@ -60,3 +60,12 @@ int main(void)
 }
 
 
+/**
+ * \brief Print the opening screen.
+ */
+void print_opening_screen()
+{
+	auto time_now = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+
+	std::cout << "Alon Kedar-Haspel" << std::endl << ctime(&time_now) << std::endl;
+}
