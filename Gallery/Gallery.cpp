@@ -1,5 +1,7 @@
 #include <iostream>
 #include <string>
+#include <ctime>
+#include <chrono>
 #include "MemoryAccess.h"
 #include "AlbumManager.h"
 
@@ -36,7 +38,10 @@ int main(void)
 	// initialize album manager
 	AlbumManager albumManager(dataAccess);
 
-
+	auto time_now = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+	
+	std::cout << "Alon Kedar-Haspel" << std::endl << ctime(&time_now) << std::endl;
+	
 	std::string albumName;
 	std::cout << "Welcome to Gallery!" << std::endl;
 	std::cout << "===================" << std::endl;
