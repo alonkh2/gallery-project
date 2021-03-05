@@ -174,6 +174,20 @@ User MemoryAccess::getUser(int userId) {
 	throw ItemNotFoundException("User", userId);
 }
 
+void MemoryAccess::removeUserTags(const User& user)
+{
+	auto albumsIter = m_albums.begin();
+	for (const auto& album : m_albums) {
+		for (const auto& picture : album.getPictures()) {
+
+			if (picture.isUserTagged(user))
+			{
+				untagUserInPicture(album.getName(), picture.getName(), user.getId());
+			}
+		}
+	}
+}
+
 void MemoryAccess::createUser(User& user)
 {
 	m_users.push_back(user);

@@ -33,6 +33,7 @@ public:
 	void deleteUser(const User& user) override;
 	bool doesUserExists(int userId) override;
 	User getUser(int userId) override;
+	void removeUserTags(const User& user) override;
 
 	// user statistics
 	int countAlbumsOwnedOfUser(const User& user) override;

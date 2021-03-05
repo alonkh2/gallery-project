@@ -307,23 +307,13 @@ void AlbumManager::listUserTags()
 
 	std::cout << "Tagged users in picture <" << picName << ">:" << std::endl;
 
-	auto checked = false;
 
 	for (const int user_id : users)
 	{
-		if (!m_dataAccess.doesUserExists(user_id))
-		{
-			pic.untagUser(user_id);
-			continue;
-		}
 		const User user = m_dataAccess.getUser(user_id);
 		std::cout << user << std::endl;
-		checked = true;
 	}
-	if (!checked)
-	{
-		throw MyException("Error: There is no user tegged in <" + picName + ">.\n");
-	}
+	
 	std::cout << std::endl;
 }
 
@@ -360,7 +350,8 @@ void AlbumManager::removeUser()
 	{
 		m_dataAccess.deleteAlbum(album.getName(), userId);
 	}
-
+	m_dataAccess.removeUserTags(user);
+	
 	m_dataAccess.deleteUser(user);
 	std::cout << "User @" << userId << " deleted successfully." << std::endl;
 }
