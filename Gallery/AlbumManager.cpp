@@ -350,7 +350,6 @@ void AlbumManager::removeUser()
 	{
 		m_dataAccess.deleteAlbum(album.getName(), userId);
 	}
-	m_dataAccess.removeUserTags(user);
 	
 	m_dataAccess.deleteUser(user);
 	std::cout << "User @" << userId << " deleted successfully." << std::endl;

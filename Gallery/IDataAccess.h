@@ -30,7 +30,6 @@ public:
 	virtual void createUser(User& user ) = 0;
 	virtual void deleteUser(const User& user) = 0;
 	virtual bool doesUserExists(int userId) = 0 ;
-	virtual void removeUserTags(const User& user) = 0;
 	
 
 	// user statistics
