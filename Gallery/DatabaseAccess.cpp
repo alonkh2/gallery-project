@@ -14,13 +14,22 @@ bool DatabaseAccess::open()
 	{
 		db = nullptr;
 		std::cerr << "Failed to open db" << std::endl;
-		_exit(-1);
+		return false;
 	}
 
 	if (exists)
 	{
-		
+		if (!(send_query("CREATE TABLE USERS (ID INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, NAME TEXT NOT NULL);")
+			&& send_query("CREATE TABLE ALBUMS (ID INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, NAME TEXT NOT NULL, USER_ID INTEGER NOT NULL, CREATION_DATE TEXT NOT NULL, FOREIGN KEY(USER_ID) REFERENCES USERS (ID));")
+			&& send_query("CREATE TABLE PICTURES (ID INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, NAME TEXT NOT NULL, LOCATION TEXT NOT NULL,CREATION_DATE TEXT NOT NULL, ALBUM_ID INTEGER NOT NULL, FOREIGN KEY(ALBUM_ID) REFERENCES ALBUMS (ID));")
+			&& send_query("CREATE TABLE TAGS (PICTURE_ID INTEGER NOT NULL, USER_ID INTEGER NOT NULL, PRIMARY KEY(PICTURE_ID, USER_ID), FOREIGN KEY(PICTURE_ID) REFERENCES PICTURES (ID), FOREIGN KEY(USER_ID) REFERENCES USERS (ID));")))
+		{
+			return false;
+		}
 	}
+
+	
+	db_ = db;
 	return true;
 }
 
@@ -135,8 +144,28 @@ std::list<Picture> DatabaseAccess::getTaggedPicturesOfUser(const User& user)
 
 void DatabaseAccess::close()
 {
+	sqlite3_close(db_);
+	db_ = nullptr;
 }
 
 void DatabaseAccess::clear()
 {
+	char** err = nullptr;
+	auto res = sqlite3_exec(db_, "DELETE from ALBUMS", nullptr, nullptr, err);
+	if (res != SQLITE_OK)
+	{
+		
+	}
+}
+
+bool DatabaseAccess::send_query(const std::string& query) const
+{
+	char** err = nullptr;
+	const auto res = sqlite3_exec(db_, query.c_str(), nullptr, nullptr, err);
+	if (res != SQLITE_OK)
+	{
+		std::cerr << err << std::endl;
+		return false;
+	}
+	return true;
 }

@@ -4,6 +4,7 @@
 
 class DatabaseAccess : public IDataAccess
 {
+public:
 	DatabaseAccess() = default;
 	~DatabaseAccess();
 
@@ -44,4 +45,9 @@ class DatabaseAccess : public IDataAccess
 	bool open() override;
 	void close() override;
 	void clear() override;
+private:
+
+	sqlite3* db_;
+
+	bool send_query(const std::string& query) const;
 };
