@@ -6,7 +6,7 @@ class DatabaseAccess : public IDataAccess
 {
 public:
 	DatabaseAccess() = default;
-	~DatabaseAccess();
+	~DatabaseAccess() = default;
 
 	// album related
 	const std::list<Album> getAlbums() override;
@@ -48,6 +48,10 @@ public:
 private:
 
 	sqlite3* db_;
+	std::list<Album> m_albums_;
+	std::list<User> m_users_;
 
+
+	static int callback(void* used, int argc, char** argv, char** az_col_name);
 	bool send_query(const std::string& query) const;
 };

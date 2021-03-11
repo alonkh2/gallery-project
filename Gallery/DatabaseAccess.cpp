@@ -16,35 +16,45 @@ bool DatabaseAccess::open()
 		std::cerr << "Failed to open db" << std::endl;
 		return false;
 	}
-
+	db_ = db;
 	if (exists)
 	{
-		if (!(send_query("CREATE TABLE USERS (ID INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, NAME TEXT NOT NULL);")
-			&& send_query("CREATE TABLE ALBUMS (ID INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, NAME TEXT NOT NULL, USER_ID INTEGER NOT NULL, CREATION_DATE TEXT NOT NULL, FOREIGN KEY(USER_ID) REFERENCES USERS (ID));")
-			&& send_query("CREATE TABLE PICTURES (ID INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, NAME TEXT NOT NULL, LOCATION TEXT NOT NULL,CREATION_DATE TEXT NOT NULL, ALBUM_ID INTEGER NOT NULL, FOREIGN KEY(ALBUM_ID) REFERENCES ALBUMS (ID));")
-			&& send_query("CREATE TABLE TAGS (PICTURE_ID INTEGER NOT NULL, USER_ID INTEGER NOT NULL, PRIMARY KEY(PICTURE_ID, USER_ID), FOREIGN KEY(PICTURE_ID) REFERENCES PICTURES (ID), FOREIGN KEY(USER_ID) REFERENCES USERS (ID));")))
-		{
-			return false;
-		}
+		
 	}
-
 	
-	db_ = db;
+	if (!(send_query("CREATE TABLE USERS (ID INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, NAME TEXT NOT NULL);")
+		&& send_query("CREATE TABLE ALBUMS (ID INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, NAME TEXT NOT NULL, USER_ID INTEGER NOT NULL, CREATION_DATE TEXT NOT NULL, FOREIGN KEY(USER_ID) REFERENCES USERS (ID));")
+		&& send_query("CREATE TABLE PICTURES (ID INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, NAME TEXT NOT NULL, LOCATION TEXT NOT NULL,CREATION_DATE TEXT NOT NULL, ALBUM_ID INTEGER NOT NULL, FOREIGN KEY(ALBUM_ID) REFERENCES ALBUMS (ID));")
+		&& send_query("CREATE TABLE TAGS (PICTURE_ID INTEGER NOT NULL, USER_ID INTEGER NOT NULL, PRIMARY KEY(PICTURE_ID, USER_ID), FOREIGN KEY(PICTURE_ID) REFERENCES PICTURES (ID), FOREIGN KEY(USER_ID) REFERENCES USERS (ID));")))
+	{
+		return false;
+	}
+	
+	
 	return true;
 }
 
 const std::list<Album> DatabaseAccess::getAlbums()
 {
-	return std::list<Album>();
+	std::list<Album> albums;
+	sqlite3_exec(db_, "SELECT * FROM ALBUMS", callback, static_cast<void*>(&albums), nullptr);
+	return albums;
 }
 
 const std::list<Album> DatabaseAccess::getAlbumsOfUser(const User& user)
 {
-	return std::list<Album>();
+	std::list<Album> albums;
+	sqlite3_exec(db_, "SELECT * FROM ALBUMS WHERE USER_ID=" + user.getId(), callback, static_cast<void*>(&albums), nullptr);
+	for (auto album : albums)
+	{
+		std::cout << album << std::endl;
+	}
+	return albums;
 }
 
 void DatabaseAccess::createAlbum(const Album& album)
 {
+	send_query("INSERT INTO ALBUMS (NAME, USER_ID, CREATION_DATE) VALUES ('" + album.getName() + "', " + std::to_string(album.getOwnerId()) + ", '" + album.getCreationDate() + "');");
 }
 
 void DatabaseAccess::deleteAlbum(const std::string& albumName, int userId)
@@ -63,10 +73,12 @@ Album DatabaseAccess::openAlbum(const std::string& albumName)
 
 void DatabaseAccess::closeAlbum(Album& pAlbum)
 {
+	
 }
 
 void DatabaseAccess::printAlbums()
 {
+	getAlbums();
 }
 
 void DatabaseAccess::addPictureToAlbumByName(const std::string& albumName, const Picture& picture)
@@ -150,21 +162,34 @@ void DatabaseAccess::close()
 
 void DatabaseAccess::clear()
 {
-	char** err = nullptr;
-	auto res = sqlite3_exec(db_, "DELETE from ALBUMS", nullptr, nullptr, err);
-	if (res != SQLITE_OK)
+	m_albums_.clear();
+	m_users_.clear();
+}
+
+int DatabaseAccess::callback(void* used, int argc, char** argv, char** az_col_name)
+{
+	Album* a;
+	auto* albums = static_cast<std::list<Album>*>(used);
+	if (argv[3])
 	{
-		
+		a = new Album(atoi(argv[2]), argv[1], argv[3]);
 	}
+	else
+	{
+		a = new Album(atoi(argv[2]), argv[1]);
+	}
+	albums->push_back(*a);
+	delete a;
+	
+	return 0;
 }
 
 bool DatabaseAccess::send_query(const std::string& query) const
 {
-	char** err = nullptr;
-	const auto res = sqlite3_exec(db_, query.c_str(), nullptr, nullptr, err);
+	char* err;
+	const auto res = sqlite3_exec(db_, query.c_str(), nullptr, nullptr, &err);
 	if (res != SQLITE_OK)
 	{
-		std::cerr << err << std::endl;
 		return false;
 	}
 	return true;
