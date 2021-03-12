@@ -52,6 +52,7 @@ private:
 	std::list<User> m_users_;
 
 
-	static int callback(void* used, int argc, char** argv, char** az_col_name);
+	static int a_callback(void* used, int argc, char** argv, char** az_col_name);
+	static int u_callback(void* used, int argc, char** argv, char** az_col_name);
 	bool send_query(const std::string& query) const;
 };

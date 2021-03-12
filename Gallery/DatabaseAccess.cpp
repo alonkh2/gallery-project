@@ -1,5 +1,7 @@
 ﻿#include "DatabaseAccess.h"
 #include "io.h"
+#include "ItemNotFoundException.h"
+#include "MyException.h"
 
 
 bool DatabaseAccess::open()
@@ -37,14 +39,14 @@ bool DatabaseAccess::open()
 const std::list<Album> DatabaseAccess::getAlbums()
 {
 	std::list<Album> albums;
-	sqlite3_exec(db_, "SELECT * FROM ALBUMS", callback, static_cast<void*>(&albums), nullptr);
+	sqlite3_exec(db_, "SELECT * FROM ALBUMS", a_callback, static_cast<void*>(&albums), nullptr);
 	return albums;
 }
 
 const std::list<Album> DatabaseAccess::getAlbumsOfUser(const User& user)
 {
 	std::list<Album> albums;
-	sqlite3_exec(db_, "SELECT * FROM ALBUMS WHERE USER_ID=" + user.getId(), callback, static_cast<void*>(&albums), nullptr);
+	sqlite3_exec(db_, "SELECT * FROM ALBUMS WHERE USER_ID=" + user.getId(), a_callback, static_cast<void*>(&albums), nullptr);
 	for (auto album : albums)
 	{
 		std::cout << album << std::endl;
@@ -54,6 +56,11 @@ const std::list<Album> DatabaseAccess::getAlbumsOfUser(const User& user)
 
 void DatabaseAccess::createAlbum(const Album& album)
 {
+	if (!doesUserExists(album.getOwnerId()))
+	{
+		throw MyException("No user with id " + std::to_string(album.getOwnerId()) + " exists");
+	}
+	
 	send_query("INSERT INTO ALBUMS (NAME, USER_ID, CREATION_DATE) VALUES ('" + album.getName() + "', " + std::to_string(album.getOwnerId()) + ", '" + album.getCreationDate() + "');");
 }
 
@@ -67,8 +74,14 @@ bool DatabaseAccess::doesAlbumExists(const std::string& albumName, int userId)
 {
 	std::list<Album> albums;
 	const auto query = "SELECT * FROM ALBUMS WHERE NAME='" + albumName + "' && USER_ID=" + std::to_string(userId) + ";";
-	sqlite3_exec(db_, query.c_str(), callback, &albums, nullptr);
-	return false;
+	sqlite3_exec(db_, query.c_str(), a_callback, &albums, nullptr);
+	
+	if (albums.empty())
+	{
+		return false;
+	}
+	albums.clear();
+	return true;
 }
 
 Album DatabaseAccess::openAlbum(const std::string& albumName)
@@ -84,10 +97,15 @@ void DatabaseAccess::closeAlbum(Album& pAlbum)
 void DatabaseAccess::printAlbums()
 {
 	auto albums  = getAlbums();
-	for (auto album : albums)
+	if (albums.empty())
+	{
+		throw MyException("There are no existing albums.");
+	}
+	for (const auto& album : albums)
 	{
 		std::cout << album << std::endl;
 	}
+	albums.clear();
 }
 
 void DatabaseAccess::addPictureToAlbumByName(const std::string& albumName, const Picture& picture)
@@ -120,17 +138,35 @@ void DatabaseAccess::deleteUser(const User& user)
 
 bool DatabaseAccess::doesUserExists(int userId)
 {
+	std::list<User> users;
+	const auto query = "SELECT * FROM USERS WHERE ID=" + std::to_string(userId) + ";";
+	sqlite3_exec(db_, query.c_str(), u_callback, &users, nullptr);
+	if (users.empty())
+	{
+		return false;
+	}
+	users.clear();
 	return true;
 }
 
 User DatabaseAccess::getUser(int userId)
 {
-	return User(1, "a");
+	std::list<User> users;
+	const auto query = "SELECT * FROM USERS WHERE ID=" + std::to_string(userId) + ";";
+	sqlite3_exec(db_, query.c_str(), u_callback, &users, nullptr);
+	if (users.empty())
+	{
+		throw ItemNotFoundException("User", userId);
+	}
+	for (auto user : users)
+	{
+		return user;
+	}
 }
 
 int DatabaseAccess::countAlbumsOwnedOfUser(const User& user)
 {
-	return 0;
+	return getAlbumsOfUser(user).size();
 }
 
 int DatabaseAccess::countAlbumsTaggedOfUser(const User& user)
@@ -175,7 +211,7 @@ void DatabaseAccess::clear()
 	m_users_.clear();
 }
 
-int DatabaseAccess::callback(void* used, int argc, char** argv, char** az_col_name)
+int DatabaseAccess::a_callback(void* used, int argc, char** argv, char** az_col_name)
 {
 	Album* a;
 	auto* albums = static_cast<std::list<Album>*>(used);
@@ -190,6 +226,17 @@ int DatabaseAccess::callback(void* used, int argc, char** argv, char** az_col_na
 	albums->push_back(*a);
 	delete a;
 	
+	return 0;
+}
+
+int DatabaseAccess::u_callback(void* used, int argc, char** argv, char** az_col_name)
+{
+	auto* users = static_cast<std::list<User>*>(used);
+	if (argc == 0)
+	{
+		return 0;
+	}
+	users->push_back(User(atoi(argv[0]), argv[1]));
 	return 0;
 }
 
