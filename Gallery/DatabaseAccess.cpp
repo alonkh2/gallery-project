@@ -19,14 +19,10 @@ bool DatabaseAccess::open()
 		return false;
 	}
 	db_ = db;
-	if (exists)
-	{
-		
-	}
 	
 	if (!(send_query("CREATE TABLE IF NOT EXISTS USERS (ID INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, NAME TEXT NOT NULL);")
 		&& send_query("CREATE TABLE IF NOT EXISTS ALBUMS (ID INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, NAME TEXT NOT NULL, USER_ID INTEGER NOT NULL, CREATION_DATE TEXT NOT NULL, FOREIGN KEY(USER_ID) REFERENCES USERS (ID));")
-		&& send_query("CREATE TABLE IF NOT EXISTS PICTURES (ID INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, NAME TEXT NOT NULL, LOCATION TEXT NOT NULL,CREATION_DATE TEXT NOT NULL, ALBUM_ID INTEGER NOT NULL, FOREIGN KEY(ALBUM_ID) REFERENCES ALBUMS (ID));")
+		&& send_query("CREATE TABLE IF NOT EXISTS PICTURES (ID INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, NAME TEXT NOT NULL, LOCATION TEXT NOT NULL, CREATION_DATE TEXT NOT NULL, ALBUM_ID INTEGER NOT NULL, FOREIGN KEY(ALBUM_ID) REFERENCES ALBUMS (ID));")
 		&& send_query("CREATE TABLE IF NOT EXISTS TAGS (PICTURE_ID INTEGER NOT NULL, USER_ID INTEGER NOT NULL, PRIMARY KEY(PICTURE_ID, USER_ID), FOREIGN KEY(PICTURE_ID) REFERENCES PICTURES (ID), FOREIGN KEY(USER_ID) REFERENCES USERS (ID));")))
 	{
 		return false;
@@ -47,7 +43,7 @@ const std::list<Album> DatabaseAccess::getAlbumsOfUser(const User& user)
 {
 	std::list<Album> albums;
 	sqlite3_exec(db_, "SELECT * FROM ALBUMS WHERE USER_ID=" + user.getId(), a_callback, static_cast<void*>(&albums), nullptr);
-	for (auto album : albums)
+	for (const auto& album : albums)
 	{
 		std::cout << album << std::endl;
 	}
@@ -66,14 +62,15 @@ void DatabaseAccess::createAlbum(const Album& album)
 
 void DatabaseAccess::deleteAlbum(const std::string& albumName, int userId)
 {
-	auto res = send_query("DELETE FROM PICTURES WHERE ALBUM_ID IN ( SELECT ID FROM ALBUMS WHERE NAME='" + albumName + "');");
+	auto res = send_query("DELETE FROM TAGS WHERE PICTURE_ID IN (SELECT PICTURES.ID FROM PICTURES INNER JOIN ALBUMS ON PICTURES.ALBUM_ID = ALBUMS.ID WHERE ALBUMS.NAME='" + albumName + "');");
+	res = send_query("DELETE FROM PICTURES WHERE ALBUM_ID IN (SELECT ID FROM ALBUMS WHERE NAME='" + albumName + "');");
 	res = send_query("DELETE FROM ALBUMS WHERE NAME='" + albumName + "';");
 }
 
 bool DatabaseAccess::doesAlbumExists(const std::string& albumName, int userId)
 {
 	std::list<Album> albums;
-	const auto query = "SELECT * FROM ALBUMS WHERE NAME='" + albumName + "' && USER_ID=" + std::to_string(userId) + ";";
+	const auto query = "SELECT * FROM ALBUMS WHERE NAME='" + albumName + "' AND USER_ID=" + std::to_string(userId) + ";";
 	sqlite3_exec(db_, query.c_str(), a_callback, &albums, nullptr);
 	
 	if (albums.empty())
@@ -86,7 +83,14 @@ bool DatabaseAccess::doesAlbumExists(const std::string& albumName, int userId)
 
 Album DatabaseAccess::openAlbum(const std::string& albumName)
 {
-	return Album(1, "a");
+	for (auto album : getAlbums())
+	{
+		if (album.getName() == albumName)
+		{
+			return album;
+		}
+	}
+	throw MyException("No albums with name " + albumName + " exists");
 }
 
 void DatabaseAccess::closeAlbum(Album& pAlbum)
@@ -110,6 +114,13 @@ void DatabaseAccess::printAlbums()
 
 void DatabaseAccess::addPictureToAlbumByName(const std::string& albumName, const Picture& picture)
 {
+	const auto id = get_album_id(albumName);
+	if (id == -1)
+	{
+		throw MyException("No album with name " + albumName + " exists");
+	}
+	
+	send_query("INSERT INTO PICTURES (ID, NAME, LOCATION, CREATION_DATE, ALBUM_ID) VALUES(" + std::to_string(picture.getId()) + "'" + picture.getName() + "', '" + picture.getPath() + ", '" + picture.getCreationDate() + "', " + std::to_string(id) + ";");
 }
 
 void DatabaseAccess::removePictureFromAlbumByName(const std::string& albumName, const std::string& pictureName)
@@ -130,6 +141,7 @@ void DatabaseAccess::printUsers()
 
 void DatabaseAccess::createUser(User& user)
 {
+	send_query("INSERT INTO USERS (ID, NAME) VALUES (" + std::to_string(user.getId()) + ", '" + user.getName() + "');");
 }
 
 void DatabaseAccess::deleteUser(const User& user)
@@ -240,6 +252,16 @@ int DatabaseAccess::u_callback(void* used, int argc, char** argv, char** az_col_
 	return 0;
 }
 
+int DatabaseAccess::id_callback(void* used, int argc, char** argv, char** az_col_name)
+{
+	auto* id = static_cast<int*>(used);
+	if (argc > 0)
+	{
+		*id = atoi(argv[0]);
+	}
+	return 0;
+}
+
 bool DatabaseAccess::send_query(const std::string& query) const
 {
 	char* err;
@@ -249,4 +271,12 @@ bool DatabaseAccess::send_query(const std::string& query) const
 		return false;
 	}
 	return true;
+}
+
+int DatabaseAccess::get_album_id(const std::string& album_name) const
+{
+	auto id = -1;
+	const auto query = "SELECT * FROM ALBUMS WHERE NAME='" + album_name + "';"; 
+	sqlite3_exec(db_, query.c_str(), id_callback, &id, nullptr);
+	return id;
 }

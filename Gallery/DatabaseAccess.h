@@ -51,8 +51,13 @@ private:
 	std::list<Album> m_albums_;
 	std::list<User> m_users_;
 
+	bool send_query(const std::string& query) const;
 
+	int get_album_id(const std::string& album_name) const;
+	
 	static int a_callback(void* used, int argc, char** argv, char** az_col_name);
 	static int u_callback(void* used, int argc, char** argv, char** az_col_name);
-	bool send_query(const std::string& query) const;
+	static int id_callback(void* used, int argc, char** argv, char** az_col_name);
+	
+	
 };
