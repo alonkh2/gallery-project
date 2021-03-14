@@ -34,6 +34,8 @@ enum CommandType
 	TOP_TAGGED_PICTURE,
 	PICTURES_TAGGED_USER,
 
+	OPEN = 77,
+	
 	EXIT = 99
 };
 

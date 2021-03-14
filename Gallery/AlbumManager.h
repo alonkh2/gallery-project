@@ -1,8 +1,14 @@
 ﻿#pragma once
 #include <vector>
+#include <Windows.h>
 #include "Constants.h"
 #include "MemoryAccess.h"
 #include "Album.h"
+#include <process.h>
+#include <Tlhelp32.h>
+#include <winbase.h>
+#include <string.h>
+#include <comdef.h>
 
 
 class AlbumManager
@@ -52,6 +58,8 @@ private:
 	void topTaggedPicture();
 	void picturesTaggedUser();
 	void exit();
+
+	void open_image();
 
 	std::string getInputFromConsole(const std::string& message);
 	bool fileExistsOnDisk(const std::string& filename);

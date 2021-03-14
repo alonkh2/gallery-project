@@ -1,5 +1,6 @@
 #include <iostream>
 #include <string>
+#include "Windows.h"
 #include "MemoryAccess.h"
 #include "AlbumManager.h"
 
@@ -53,5 +54,3 @@ int main(void)
 	} 
 	while (true);
 }
-
-
