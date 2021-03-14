@@ -166,7 +166,7 @@ void DatabaseAccess::printUsers()
 
 void DatabaseAccess::createUser(User& user)
 {
-	int id = 0;
+	auto id = 0;
 	send_query("INSERT INTO USERS (NAME) VALUES ('" + user.getName() + "');");
 	const auto query = "SELECT * FROM USERS WHERE NAME='" + user.getName() + "' ORDER BY ID DESC LIMIT 1;";
 	sqlite3_exec(db_, query.c_str(), id_callback, &id, nullptr);
