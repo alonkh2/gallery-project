@@ -7,7 +7,7 @@
 bool DatabaseAccess::open()
 {
 	sqlite3* db;
-	const std::string dbFileName = "MyDB.sqlite";
+	const std::string dbFileName = "galleryDB.sqlite";
 
 	const auto exists = _access(dbFileName.c_str(), 0);
 	const auto res = sqlite3_open(dbFileName.c_str(), &db);
@@ -299,8 +299,16 @@ Picture DatabaseAccess::getTopTaggedPicture()
 std::list<Picture> DatabaseAccess::getTaggedPicturesOfUser(const User& user)
 {
 	std::list<Picture> pics;
-	const auto query = "SELECT * FROM PICTURES INNER JOIN TAGS ON PICTURES.ID = TAGS.PICTURE_ID WHERE TAGS.USER_ID = " + std::to_string(user.getId()) + ";";
-	sqlite3_exec(db_, query.c_str(), p_callback, &pics, nullptr);
+	for (const auto& album : getAlbums())
+	{
+		for (const auto& picture : album.getPictures())
+		{
+			if (picture.isUserTagged(user))
+			{
+				pics.push_back(picture);
+			}
+		}
+	}
 	return pics;
 }
 
