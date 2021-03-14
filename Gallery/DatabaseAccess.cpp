@@ -312,10 +312,10 @@ void DatabaseAccess::close()
 
 void DatabaseAccess::clear()
 {
-	sqlite3_exec(db_, "DELETE FROM USERS", nullptr, nullptr, nullptr);
-	sqlite3_exec(db_, "DELETE FROM ALBUMS", nullptr, nullptr, nullptr);
-	sqlite3_exec(db_, "DELETE FROM PICTURES", nullptr, nullptr, nullptr);
-	sqlite3_exec(db_, "DELETE FROM TAGS", nullptr, nullptr, nullptr);
+	auto res = send_query("DELETE FROM USERS");
+	res = send_query("DELETE FROM ALBUMS");
+	res = send_query("DELETE FROM PICTURES");
+	res = send_query("DELETE FROM TAGS");
 }
 
 int DatabaseAccess::a_callback(void* used, int argc, char** argv, char** az_col_name)
