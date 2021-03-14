@@ -121,7 +121,7 @@ Album MemoryAccess::openAlbum(const std::string& albumName)
 	throw MyException("No album with name " + albumName + " exists");
 }
 
-void MemoryAccess::addPictureToAlbumByName(const std::string& albumName, const Picture& picture) 
+void MemoryAccess::addPictureToAlbumByName(const std::string& albumName, Picture& picture) 
 {
 	auto result = getAlbumIfExists(albumName);
 
@@ -323,7 +323,7 @@ Picture MemoryAccess::getTopTaggedPicture()
 			currentMax = tagsCount;
 		}
 	}
-	if ( nullptr == mostTaggedPic ) {
+	if (nullptr == mostTaggedPic ) {
 		throw MyException("There isn't any tagged picture.");
 	}
 
