@@ -415,6 +415,11 @@ void AlbumManager::exit()
 
 BOOL WINAPI consoleHandler(DWORD signal);
 
+int app;
+
+/**
+ * \brief Opens an image using an external app.
+ */
 void AlbumManager::open_image()
 {
 	refreshOpenAlbum();
@@ -427,7 +432,7 @@ void AlbumManager::open_image()
 
 	Picture pic = m_openAlbum.getPicture(picName);
 
-	const auto option = getInputFromConsole("Which application would you like to use?\n [1] mspaint\n [2] notepad\n");
+	const auto option = getInputFromConsole("Which application would you like to use?\n [1] mspaint\n [2] wmplayer\n");
 	const auto intOption = atoi(option.c_str());
 	if (intOption != 1 && intOption != 2)
 	{
@@ -437,8 +442,9 @@ void AlbumManager::open_image()
 	PROCESS_INFORMATION pi;
 
 
-	const auto query = (intOption == 1 ? "mspaint.exe " : "notepad.exe ") + pic.getPath();
+	const auto query = (intOption == 1 ? "mspaint.exe " : "C:/Program Files (x86)/Windows Media Player/wmplayer.exe ") + pic.getPath();
 
+	app = intOption;
 	// set the size of the structures
 	ZeroMemory(&si, sizeof(si));
 	si.cb = sizeof(si);
@@ -473,16 +479,31 @@ void AlbumManager::open_image()
 
 int killProcessByName(const char* filename);
 
+/**
+ * \brief Handles the ctrl + c event.
+ * \param signal The input signal.
+ * \return TRUE.
+ */
 BOOL WINAPI consoleHandler(DWORD signal)
 {
 	if (signal == CTRL_C_EVENT)
 	{
-		killProcessByName("mspaint.exe");
-		killProcessByName("notepad.exe");
+		if (app == 1)
+		{
+			killProcessByName("mspaint.exe");
+			return TRUE;
+		}
+		
+		killProcessByName("wmplayer.exe");
 	}
 	return TRUE;
 }
 
+/**
+ * \brief Kills a process.
+ * \param filename The process to kill.
+ * \return yes.
+ */
 int killProcessByName(const char* filename)
 {
 	int retValue = 0;
