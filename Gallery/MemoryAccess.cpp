@@ -73,6 +73,10 @@ void MemoryAccess::cleanUserData(const User& userId)
 {
 	auto albumsIter = m_albums.begin();
 	for (const auto& album : m_albums) {
+		if (album.getOwnerId() == userId.getId())
+		{
+			deleteAlbum(album.getName(), userId.getId());
+		}
 		for (const auto& picture : album.getPictures()) {
 
 			if (picture.isUserTagged(userId))
